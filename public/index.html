@@ -11,10 +11,6 @@
         line-height: 1.5;
       }
     </style>
-    <meta
-      property="og:image"
-      content="https://snapit.now.sh/eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJodHRwczovL3NuYXBpdC5ub3cuc2gvIiwid2lkdGgiOjEyMDAsImhlaWdodCI6NjMwLCJpc3MiOiJkdGludGgifQ.XV8M_uN1QAA1uZycxYIdgB6bf_4kjvBOneea9-4PhmR5Q_IOVQhCTOEBSB6a5A3AkE0SYbWDLDcytaQzjHA3_fv84RQnrBtWuZCnVHpfzEtfSgO2FiVFs4hZSNrCGHgJ6IQSA7n1jIBtH8Hi-C7BSv_gblzo98-SWVR69OXecED68nFvWZl8IAeCsulfP_Jpga9WsS0cMMGMzwrC4UtnKc9FhBeuIoLXpwz2OnjuHW1lq1Gqgl4qiT6fkO_GMhL53_Fbjb2nS57Fi3FGA4OrvP6w4wk4XRtf-UOuX6uNcsPEsZ5rRHEDKR8jXp73o7T3H3MUbfkGXyl6WcOwGUUohQ.png"
-    />
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400;0,700;1,400;1,700&display=swap"
@@ -25,130 +21,13 @@
       integrity="sha256-hwssFiO1q9mOqx1k7bbzQHlQbiUgmas0fx1QOluEWH0="
       crossorigin="anonymous"
     />
-    <link rel="webmention" href="https://webmention.io/dt.in.th/webmention" />
-    <link rel="pingback" href="https://webmention.io/dt.in.th/xmlrpc" />
   </head>
   <body>
-    <h1>personal-puppeteer</h1>
-    <p>
-      This is a <em>personal web page screenshotting service</em>. By
-      <em>personal</em> I mean only I can use it. But it is
-      <a href="https://github.com/dtinth/personal-puppeteer">open source</a>,
-      and you can run your own instance.
-    </p>
-    <h2>How to use it</h2>
-    <ol>
-      <li>
-        <p>Generate a JWT with these fields:</p>
-        <table>
-          <thead>
-            <tr>
-              <th width="180">Key</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>iss</code></td>
-              <td>
-                JWT issuer, which must be in the following
-                <a href="#jwt-allow-list">allowlist</a>
-              </td>
-            </tr>
-            <tr>
-              <td><code>url</code></td>
-              <td>URL to screenshot</td>
-            </tr>
-            <tr>
-              <td><code>width</code></td>
-              <td>Width of the viewport</td>
-            </tr>
-            <tr>
-              <td><code>width</code></td>
-              <td>Height of the viewport</td>
-            </tr>
-            <tr>
-              <td><code>deviceScaleFactor</code></td>
-              <td>1 for normal display, 2 for retina</td>
-            </tr>
-            <tr>
-              <td><code>waitUntil</code></td>
-              <td>load / domcontentloaded / networkidle0 / networkidle2</td>
-            </tr>
-            <tr>
-              <td><code>js</code></td>
-              <td>Custom JavaScript code to run after page load</td>
-            </tr>
-            <tr>
-              <td><code>css</code></td>
-              <td>Custom CSS to inject into page</td>
-            </tr>
-          </tbody>
-        </table>
-      </li>
-      <li>
-        Construct a URL and use it:
-        <pre><code><script>document.write(location.origin + '/<strong>&lt;JWT&gt;</strong>.png')</script></code></pre>
-      </li>
-    </ol>
-
-    <h2>Notes</h2>
-    <ul>
-      <li>
-        The generated screenshot is then
-        <a href="https://vercel.com/docs/edge-network/caching"
-          >cached by Vercel Edge Network</a
-        >. The cache header being used is
-        <code
-          >public, immutable, no-transform, s-maxage=31536000,
-          max-age=31536000</code
-        >, which means that you must generate a new URL to invalidate the cache.
-      </li>
-    </ul>
-
-    <h2>Allowed JWT issuers</h2>
-    <div id="jwt-allowlist">
-      <table>
-        <thead>
-          <tr>
-            <th width="20%">Issuer</th>
-            <th>Public key</th>
-          </tr>
-        </thead>
-        <tbody>
-          <template v-if="allowlist">
-            <tr v-for="item, key of allowlist" :key="key">
-              <td><code>{{key}}</code></td>
-              <td>
-                <pre style="margin: 0"><code>{{item.publicKey}}</code></pre>
-              </td>
-            </tr>
-          </template>
-          <template v-else>
-            <tr>
-              <td colspan="2"><em>(Loading...)</em></td>
-            </tr>
-          </template>
-        </tbody>
-      </table>
-    </div>
+    <h1>nothing to see here</h1>
     <script
       src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.min.js"
       integrity="sha256-KSlsysqp7TXtFo/FHjb1T9b425x3hrvzjMWaJyKbpcI="
       crossorigin="anonymous"
     ></script>
-    <script>
-      new Vue({
-        el: '#jwt-allowlist',
-        data: {
-          allowlist: null,
-        },
-        mounted() {
-          fetch('/api/auth')
-            .then((x) => x.json())
-            .then((x) => (this.allowlist = x))
-        },
-      })
-    </script>
   </body>
 </html>
