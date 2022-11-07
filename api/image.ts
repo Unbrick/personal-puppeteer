@@ -1,62 +1,63 @@
 import { NowRequest, NowResponse } from '@vercel/node'
 import { launch, Page } from 'puppeteer-core'
 import chrome from 'chrome-aws-lambda'
-import { decode, verify } from 'jsonwebtoken'
-import { allowList } from './auth'
-import fs from 'fs'
+import fs, { readFileSync } from 'fs'
+import * as path from 'path'
+import * as os from 'os'
+
 
 let _page: Page | null
 
 export default async function (req: NowRequest, res: NowResponse) {
   try {
-    const jwt = String(req.query.jwt)
-    const issuer = String((decode(jwt) as any)?.iss)
-    if (!Object.prototype.hasOwnProperty.call(allowList, issuer)) {
-      res.status(401).json({ error: { message: 'Unrecognized issuer.' } })
-      return
+    const { authorization } = req.headers;
+
+    if (authorization === `Bearer ${process.env.API_SECRET_KEY}`) {
+      const postBody = req.body
+      let cssString = String(req.body.css) || ''
+      const type = String(postBody.type) === 'jpeg' ? 'jpeg' : ('png' as const)
+      const html = String(postBody.html) || ''
+      const waitUntil = (() => {
+        const allowedValues = [
+          'load',
+          'domcontentloaded',
+          'networkidle0',
+          'networkidle2',
+        ] as const
+        const value = String(postBody.waitUntil)
+        const index = allowedValues.indexOf(value as any)
+        return allowedValues[index] || 'networkidle0'
+      })()
+      const result = await renderImage({
+        html,
+        type,
+        width: postBody.width || 1080,
+        height: postBody.height || 1350,
+        deviceScaleFactor: 1,
+        waitUntil,
+        js: String(postBody.js || ''),
+        css: String(cssString || ''),
+      })
+      res.setHeader('Content-Type', 'image/' + type)
+      res.setHeader(
+        'Cache-Control',
+        `public, immutable, no-transform, s-maxage=31536000, max-age=31536000`
+      )
+      if (result instanceof Buffer) {
+        res.status(201).send(result.toString("base64"))
+      } else {
+        res.status(500)
+      }
+    } else {
+      res.status(401).json({ error: { message: 'Unauthorized' } })
     }
-    const registeredIssuer = allowList[issuer]
-    const payload = verify(jwt, registeredIssuer.publicKey, {
-      algorithms: ['RS256'],
-      issuer: issuer,
-    }) as any
-    const type = String(req.query.type) === 'jpeg' ? 'jpeg' : ('png' as const)
-    const url = String(payload.url)
-    const waitUntil = (() => {
-      const allowedValues = [
-        'load',
-        'domcontentloaded',
-        'networkidle0',
-        'networkidle2',
-      ] as const
-      const value = String(payload.waitUntil)
-      const index = allowedValues.indexOf(value as any)
-      return allowedValues[index] || 'load'
-    })()
-    const result = await renderImage({
-      url,
-      type,
-      width: +payload.width || 1280,
-      height: +payload.height || 720,
-      deviceScaleFactor: +payload.deviceScaleFactor || 1,
-      waitUntil,
-      js: String(payload.js || ''),
-      css: String(payload.css || ''),
-    })
-    res.setHeader('Content-Type', 'image/' + type)
-    res.setHeader(
-      'Cache-Control',
-      `public, immutable, no-transform, s-maxage=31536000, max-age=31536000`
-    )
-    res.send(result)
   } catch (error) {
-    res.send('Error')
     console.error(error)
   }
 }
 
 interface ScreenshotOptions {
-  url: string
+  html: string
   width: number
   height: number
   css: string
@@ -67,7 +68,7 @@ interface ScreenshotOptions {
 }
 
 async function renderImage({
-  url,
+  html,
   type,
   width,
   height,
@@ -78,9 +79,11 @@ async function renderImage({
 }: ScreenshotOptions) {
   let page = await getPage()
   await page.setViewport({ width, height, deviceScaleFactor })
-  await page
-    .goto(url, { waitUntil, timeout: 6400 })
-    .catch((e) => console.error(e))
+  //await page
+  //  .goto(file, { waitUntil, timeout: 6400 })
+  //  .catch((e) => console.error(e))
+  await page.setContent(html)
+
   if (js) {
     await page
       .evaluate(async (code) => {
@@ -104,17 +107,6 @@ async function renderImage({
   await page.evaluate(async (css) => {
     const style = document.createElement('style')
     style.textContent = `
-      *,
-      *::after,
-      *::before {
-        transition-delay: 0s !important;
-        transition-duration: 0s !important;
-        animation-delay: -0.0001s !important;
-        animation-duration: 0s !important;
-        animation-play-state: paused !important;
-        caret-color: transparent !important;
-        color-adjust: exact !important;
-      }
       ${css}
     `
     document.head.appendChild(style)
@@ -122,8 +114,7 @@ async function renderImage({
     await new Promise(requestAnimationFrame)
     await new Promise(requestAnimationFrame)
   }, css || '')
-  const file = await page.screenshot({ type })
-  return file
+  return await page.screenshot({ type })
 }
 
 async function patchFontConfig() {
